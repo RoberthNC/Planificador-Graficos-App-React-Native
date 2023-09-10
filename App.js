@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Alert, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native'
+import { Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import Header from './src/components/Header'
 import NuevoPresupuesto from './src/components/NuevoPresupuesto'
 import ControlPresupuesto from './src/components/ControlPresupuesto'
@@ -13,6 +13,7 @@ const App = () => {
   const [presupuesto, setPresupuesto] = useState(0)
   const [gastos, setGastos] = useState([])
   const [modal, setModal] = useState(false)
+  const [gasto, setGasto] = useState({})
 
   const handleNuevoPresupuesto = presupuesto => {
     if(Number(presupuesto) > 0){
@@ -23,36 +24,64 @@ const App = () => {
   }
 
   const handleGasto = gasto => {
-    if(Object.values(gasto).includes('')){
+    if([gasto.nombre, gasto.categoria, gasto.cantidad].includes('')){
       Alert.alert('Error','Todos los campos son obligatorios',[{text:'Ok'}])
       return
     }
-    gasto.id = generarId()
-    setGastos([...gastos, gasto])
+    if(gasto?.id){
+      const gastosActualizados = gastos.map(gastoState => gastoState.id === gasto.id ? gasto:gastoState)
+      setGastos(gastosActualizados)
+    }else{
+      gasto.id = generarId()
+      gasto.fecha = Date.now()
+      setGastos([...gastos, gasto])
+    }
     setModal(!modal)
+  }
+
+  const eliminarGasto = id => {
+    Alert.alert(
+      '¿Deseas eliminar este gasto?',
+      'Un gasto eliminado no se puede recuperar',
+      [
+        {text:'No',style:'cancel'},
+        {text:'Sí, Eliminar', onPress: () => {
+          const gastosActualizados = gastos.filter(gastoState => gastoState.id !== id)
+          setGastos(gastosActualizados)
+          setModal(!modal)
+          setGasto({})
+        }}
+      ]
+    )
   }
 
   return (
     <View style={styles.contenedor}>
-      <View style={styles.header}>
-        <Header />
-        { isValidPresupuesto ? (
-          <ControlPresupuesto
+      <ScrollView>
+        <View style={styles.header}>
+          <Header />
+          { isValidPresupuesto ? (
+            <ControlPresupuesto
+              gastos={gastos}
+              presupuesto={presupuesto}
+            />
+          ):(
+            <NuevoPresupuesto
+              presupuesto={presupuesto}
+              setPresupuesto={setPresupuesto}  
+              handleNuevoPresupuesto={handleNuevoPresupuesto}
+            />
+          ) }
+        </View>
+
+        { isValidPresupuesto && (
+          <ListadoGastos
             gastos={gastos}
-            presupuesto={presupuesto}
-          />
-        ):(
-          <NuevoPresupuesto
-            presupuesto={presupuesto}
-            setPresupuesto={setPresupuesto}  
-            handleNuevoPresupuesto={handleNuevoPresupuesto}
+            setModal={setModal}
+            setGasto={setGasto}
           />
         ) }
-      </View>
-
-      { isValidPresupuesto && (
-        <ListadoGastos />
-      ) }
+      </ScrollView>
 
       { modal && (
         <Modal
@@ -62,12 +91,16 @@ const App = () => {
           <FormularioGasto
             setModal={setModal}
             handleGasto={handleGasto}
+            setGasto={setGasto}
+            gasto={gasto}
+            eliminarGasto={eliminarGasto}
           />
         </Modal>
       ) }
 
       { isValidPresupuesto && (
         <Pressable
+          style={styles.pressable}
           onPress={() => setModal(true)}
         >
           <Image
@@ -87,12 +120,18 @@ const styles = StyleSheet.create({
   },
   header:{
     backgroundColor:'#3B82F6',
+    minHeight:400
+  },
+  pressable:{
+    width:60,
+    height:60,
+    position:'absolute',
+    bottom:40,
+    right:20
   },
   imagen:{
     width:60,
     height:60,
-    position:'absolute',
-    right:20
   }
 })
 

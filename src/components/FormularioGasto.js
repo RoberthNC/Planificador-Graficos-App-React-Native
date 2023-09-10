@@ -1,25 +1,51 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
 import globalStyles from '../styles'
 import { useState } from 'react'
 
-const FormularioGasto = ({ setModal, handleGasto }) => {
+const FormularioGasto = ({ setModal, handleGasto, setGasto, gasto, eliminarGasto }) => {
 
     const [ nombre, setNombre ] = useState('')
     const [ cantidad, setCantidad ] = useState('')
     const [ categoria, setCategoria ] = useState('')
+    const [ id, setId ] = useState('')
+    const [ fecha, setFecha ] = useState('')
+
+    useEffect(()=>{
+        if(gasto?.nombre){
+            setNombre(gasto.nombre)
+            setCantidad(gasto.cantidad)
+            setCategoria(gasto.categoria)
+            setId(gasto.id)
+            setFecha(gasto.fecha)
+        }
+    }, [gasto])
 
     return (
         <View style={styles.contenedor}>
-            <View>
-                <Pressable style={styles.btnCancelar} onPress={() => setModal(false)}>
-                    <Text style={styles.btnCancelarTexto}>Cancelar</Text>
+            <View style={styles.contenedorBotones}>
+                <Pressable 
+                    style={[styles.btn, styles.btnCancelar]} 
+                    onPress={() => {
+                        setModal(false)
+                        setGasto({})
+                    }}
+                >
+                    <Text style={styles.btnTexto}>Cancelar</Text>
                 </Pressable>
+                { !!id && (
+                    <Pressable 
+                        style={[styles.btn, styles.btnEliminar]} 
+                        onPress={() => eliminarGasto(id)}
+                    >
+                        <Text style={styles.btnTexto}>Eliminar</Text>
+                    </Pressable>
+                ) }
             </View>
 
             <View style={styles.formulario}>
-                <Text style={styles.titulo}>Nuevo Gasto</Text>
+                <Text style={styles.titulo}>{gasto?.nombre ? 'Editar Gasto' : 'Nuevo Gasto'}</Text>
                 <View style={styles.campo}>
                     <Text style={styles.label}>Nombre Gasto</Text>
                     <TextInput
@@ -55,7 +81,7 @@ const FormularioGasto = ({ setModal, handleGasto }) => {
                         <Picker.item label='Gastos Varios' value='gastos' />
                         <Picker.item label='Ocio' value='ocio' />
                         <Picker.item label='Salud' value='salud' />
-                        <Picker.item label='Subscripciones' value='subscripciones' />
+                        <Picker.item label='Suscripciones' value='suscripciones' />
                     </Picker>
                 </View>
 
@@ -64,10 +90,12 @@ const FormularioGasto = ({ setModal, handleGasto }) => {
                     onPress={() => handleGasto({
                         nombre,
                         cantidad,
-                        categoria
+                        categoria,
+                        id,
+                        fecha
                     })}
                 >
-                    <Text style={styles.submitBtnTexto}>Agregar Gasto</Text>
+                    <Text style={styles.submitBtnTexto}>{gasto?.nombre ? 'Guardar Cambios':'Agregar Gasto'}</Text>
                 </Pressable>
             </View>
         </View>
@@ -79,13 +107,23 @@ const styles = StyleSheet.create({
         backgroundColor:'#1E40AF',
         flex:1
     },
-    btnCancelar:{
-        backgroundColor:'#DB2777',
+    contenedorBotones:{
+        flexDirection:'row',
+        justifyContent:'space-between'
+    },
+    btn:{
         padding:10,
         marginTop:30,
-        marginHorizontal:10
+        marginHorizontal:10,
+        flex:1
     },
-    btnCancelarTexto:{
+    btnCancelar:{
+        backgroundColor:'#DB2777',
+    },
+    btnEliminar:{
+        backgroundColor:'red',
+    },
+    btnTexto:{
         textAlign:'center',
         textTransform:'uppercase',
         fontWeight:'bold',
