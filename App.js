@@ -1,9 +1,11 @@
 import React, { useState } from 'react'
-import { Alert, Image, Modal, Pressable, StyleSheet, View } from 'react-native'
+import { Alert, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native'
 import Header from './src/components/Header'
 import NuevoPresupuesto from './src/components/NuevoPresupuesto'
 import ControlPresupuesto from './src/components/ControlPresupuesto'
 import FormularioGasto from './src/components/FormularioGasto'
+import ListadoGastos from './src/components/ListadoGastos'
+import { generarId } from './src/helpers'
 
 const App = () => {
 
@@ -18,6 +20,16 @@ const App = () => {
     }else{
       Alert.alert('Error','El presupuesto no puede ser menor o igual a 0',[{text:'Ok'}])
     }
+  }
+
+  const handleGasto = gasto => {
+    if(Object.values(gasto).includes('')){
+      Alert.alert('Error','Todos los campos son obligatorios',[{text:'Ok'}])
+      return
+    }
+    gasto.id = generarId()
+    setGastos([...gastos, gasto])
+    setModal(!modal)
   }
 
   return (
@@ -38,12 +50,19 @@ const App = () => {
         ) }
       </View>
 
+      { isValidPresupuesto && (
+        <ListadoGastos />
+      ) }
+
       { modal && (
         <Modal
           animationType='slide'
           visible={modal}
         >
-          <FormularioGasto />
+          <FormularioGasto
+            setModal={setModal}
+            handleGasto={handleGasto}
+          />
         </Modal>
       ) }
 
@@ -73,7 +92,6 @@ const styles = StyleSheet.create({
     width:60,
     height:60,
     position:'absolute',
-    top:100,
     right:20
   }
 })
