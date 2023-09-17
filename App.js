@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import Header from './src/components/Header'
 import NuevoPresupuesto from './src/components/NuevoPresupuesto'
 import ControlPresupuesto from './src/components/ControlPresupuesto'
@@ -17,6 +18,49 @@ const App = () => {
   const [gasto, setGasto] = useState({})
   const [filtro, setFiltro] = useState('')
   const [gastosFiltrados, setGastosFiltrados] = useState([])
+
+  useEffect(()=>{
+    const obtenerPresupuestoStorage = async () => {
+      const presupuestoStorage = await AsyncStorage.getItem('planificador_presupuesto')??0
+      if(presupuestoStorage > 0){
+        setPresupuesto(presupuestoStorage)
+        setIsValidPresupuesto(true)
+      }
+    }
+    obtenerPresupuestoStorage()
+  }, [])
+
+  useEffect(()=>{
+    if(isValidPresupuesto){
+      const guardarPresupuestoStorage = async () => {
+        try {
+          await AsyncStorage.setItem('planificador_presupuesto', presupuesto)
+        } catch (error) {
+          console.log(error)
+        }
+      }
+      guardarPresupuestoStorage()
+    }
+  }, [isValidPresupuesto])
+
+  useEffect(()=>{
+    const obtenerGastosStorage = async () => {
+      try {
+        const gastosStorge = await AsyncStorage.getItem('planificador_gastos')
+        setGastos(gastosStorge ? JSON.parse(gastosStorge):[])
+      } catch (error) {
+        console.log(error)
+      }
+    }
+    obtenerGastosStorage()
+  }, [])
+
+  useEffect(()=>{
+    const guardarGastosStorage = async () => {
+      await AsyncStorage.setItem('planificador_gastos', JSON.stringify(gastos))
+    }
+    guardarGastosStorage()
+  }, [gastos])
 
   const handleNuevoPresupuesto = presupuesto => {
     if(Number(presupuesto) > 0){
@@ -58,6 +102,23 @@ const App = () => {
     )
   }
 
+  const resetearApp = () => {
+    Alert.alert(
+      '¿Deseas reiniciar la app?',
+      'Esto eliminará presupuesto y gastos',
+      [{text:'No', style:'cancel'},{text:'Sí, Eliminar', onPress:async()=>{
+        try {
+          await AsyncStorage.clear()
+          setIsValidPresupuesto(false)
+          setPresupuesto(0)
+          setGastos([])
+        } catch (error) {
+          console.log(error)
+        }
+      }}]
+    )
+  }
+
   return (
     <View style={styles.contenedor}>
       <ScrollView>
@@ -67,6 +128,7 @@ const App = () => {
             <ControlPresupuesto
               gastos={gastos}
               presupuesto={presupuesto}
+              resetearApp={resetearApp}
             />
           ):(
             <NuevoPresupuesto
